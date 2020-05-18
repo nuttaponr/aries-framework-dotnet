@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Hyperledger.Aries.Agents;
+using Hyperledger.Aries.Routing.Mediator;
 
 namespace MediatorAgentService
 {
@@ -35,6 +37,7 @@ namespace MediatorAgentService
                     options.WalletCredentials.Key = "MySecretKey";
                     #endregion
                 });
+                builder.Services.AddSingleton<IAgentMiddleware, SimpleACAForwardMiddleware>();
             });
         }
 
