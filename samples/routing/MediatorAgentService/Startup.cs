@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Routing.Mediator;
+using Hyperledger.Aries.Features.BasicMessage;
 
 namespace MediatorAgentService
 {
@@ -38,6 +39,7 @@ namespace MediatorAgentService
                     #endregion
                 });
                 builder.Services.AddSingleton<IAgentMiddleware, SimpleACAForwardMiddleware>();
+                builder.Services.AddMessageHandler<CustomBasicMessageHandler>();
             });
         }
 
