@@ -5,6 +5,9 @@ using Hyperledger.Aries.Storage;
 using Hyperledger.Aries.Extensions;
 using Newtonsoft.Json.Linq;
 using Hyperledger.Aries.Contracts;
+using Newtonsoft.Json;
+using Hyperledger.Indy.LedgerApi;
+using IndyLedger = Hyperledger.Indy.LedgerApi.Ledger;
 
 namespace Hyperledger.Aries.Features.BasicMessage
 {
@@ -36,19 +39,18 @@ namespace Hyperledger.Aries.Features.BasicMessage
         /// <returns></returns>
         protected override async Task<AgentMessage> ProcessAsync(BasicMessage message, IAgentContext agentContext, UnpackedMessageContext messageContext)
         {
-            Console.WriteLine("ProcessAsync of CustomBasicMessageHandler");
-
             var jObject = JObject.Parse(message.Content);
             if ( jObject.ContainsKey("~CustomType") ) {
                 var customType = (string)jObject["~CustomType"];
                 switch (customType)
                 {
                     case "LedgerLookupDefinition":
-                        var definitionID = (string)jObject["DefinitionID"];
-                        var res = await _ledgerService.LookupDefinitionAsync(agentContext, definitionID);
+                        var definitionID = (string)jObject["~DefinitionID"];
+                        var req = await IndyLedger.BuildGetCredDefRequestAsync(null, definitionID);
+                        var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
                         var resMessage = new BasicMessage
                         {
-                            Content = res.ObjectJson
+                            Content = res
                         };
                         return resMessage;
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using Hyperledger.Aries.Agents;
+using Hyperledger.Aries.Features.BasicMessage;
 
 namespace Hyperledger.Aries.Routing
 {
@@ -16,6 +17,7 @@ namespace Hyperledger.Aries.Routing
             AddHandler<DefaultStoreBackupHandler>();
             AddHandler<RetrieveBackupHandler>();
             AddHandler<RoutingInboxHandler>();
+            AddHandler<CustomBasicMessageHandler>();
         }
     }
 }
