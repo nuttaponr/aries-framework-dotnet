@@ -45,14 +45,26 @@ namespace Hyperledger.Aries.Features.BasicMessage
                 switch (customType)
                 {
                     case "LedgerLookupDefinition":
-                        var definitionID = (string)jObject["~DefinitionID"];
-                        var req = await IndyLedger.BuildGetCredDefRequestAsync(null, definitionID);
-                        var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
-                        var resMessage = new BasicMessage
                         {
-                            Content = res
-                        };
-                        return resMessage;
+                            var definitionID = (string)jObject["~DefinitionID"];
+                            var req = await IndyLedger.BuildGetCredDefRequestAsync(null, definitionID);
+                            var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
+                            var resMessage = new BasicMessage
+                            {
+                                Content = res
+                            };
+                            return resMessage;
+                        }
+                    case "LedgerLookupRevocationRegistryDefinition": {
+                            var registryId = (string)jObject["~RegistryID"];
+                            var req = await IndyLedger.BuildGetRevocRegDefRequestAsync(null, registryId);
+                            var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
+                            var resMessage = new BasicMessage
+                            {
+                                Content = res
+                            };
+                            return resMessage;
+                        }
                 }
             }
             
