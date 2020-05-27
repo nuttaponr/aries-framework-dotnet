@@ -40,7 +40,8 @@ namespace Hyperledger.Aries.Features.BasicMessage
         protected override async Task<AgentMessage> ProcessAsync(BasicMessage message, IAgentContext agentContext, UnpackedMessageContext messageContext)
         {
             var jObject = JObject.Parse(message.Content);
-            if ( jObject.ContainsKey("~CustomType") ) {
+            if (jObject.ContainsKey("~CustomType"))
+            {
                 var customType = (string)jObject["~CustomType"];
                 switch (customType)
                 {
@@ -55,9 +56,21 @@ namespace Hyperledger.Aries.Features.BasicMessage
                             };
                             return resMessage;
                         }
-                    case "LedgerLookupRevocationRegistryDefinition": {
+                    case "LedgerLookupRevocationRegistryDefinition":
+                        {
                             var registryId = (string)jObject["~RegistryID"];
                             var req = await IndyLedger.BuildGetRevocRegDefRequestAsync(null, registryId);
+                            var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
+                            var resMessage = new BasicMessage
+                            {
+                                Content = res
+                            };
+                            return resMessage;
+                        }
+                    case "LedgerLookupSchema":
+                        {
+                            var schemaId = (string)jObject["~SchemaID"];
+                            var req = await IndyLedger.BuildGetSchemaRequestAsync(null, schemaId);
                             var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
                             var resMessage = new BasicMessage
                             {
