@@ -83,7 +83,7 @@ namespace Hyperledger.Aries.Features.BasicMessage
                             var revocationRegistryId = (string)jObject["~RevocationRegistryId"];
                             var from = (string)jObject["~From"];
                             var to = (string)jObject["~To"];
-                            var req = await IndyLedger.BuildGetRevocRegDeltaRequestAsync(null, revocationRegistryId, from, to);
+                            var req = await IndyLedger.BuildGetRevocRegDeltaRequestAsync(null, revocationRegistryId, Convert.ToInt64(from), Convert.ToInt64(to));
                             var res = await IndyLedger.SubmitRequestAsync(await agentContext.Pool, req);
                             var resMessage = new BasicMessage
                             {
