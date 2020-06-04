@@ -7,6 +7,12 @@ namespace Hyperledger.Aries.Storage
     /// </summary>
     public partial class WalletConfiguration
     {
+
+        public WalletConfiguration()
+        {
+            StorageConfiguration = new WalletStorageConfiguration();
+            StorageCredential = new WalletStorageCredential();
+        }
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
@@ -27,6 +33,9 @@ namespace Hyperledger.Aries.Storage
         /// <value>The storage configuration.</value>
         [JsonProperty("storage_config", NullValueHandling = NullValueHandling.Ignore)]
         public WalletStorageConfiguration StorageConfiguration { get; set; }
+
+
+        public WalletStorageCredential StorageCredential { get; set; }
 
         /// <inheritdoc />
         public override string ToString() =>

@@ -13,8 +13,14 @@ namespace Hyperledger.Aries.Storage
             /// Gets or sets the path.
             /// </summary>
             /// <value>The path.</value>
-            [JsonProperty("path")]
+            [JsonProperty("path", NullValueHandling = NullValueHandling.Ignore)]
             public string Path { get; set; }
+
+            [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+            public string Url { get; set; }
+
+            [JsonProperty("wallet_scheme", NullValueHandling = NullValueHandling.Ignore)]
+            public string WalletScheme { get; set; }
 
             /// <inheritdoc />
             public override string ToString() =>

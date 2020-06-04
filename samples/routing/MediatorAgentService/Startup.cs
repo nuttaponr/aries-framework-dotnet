@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Routing.Mediator;
 using Hyperledger.Aries.Features.BasicMessage;
+using Hyperledger.Aries.Routing.Mediator.Storage;
 
 namespace MediatorAgentService
 {
@@ -26,16 +27,31 @@ namespace MediatorAgentService
                 {
                     #region Required configuration parameters
                     // Agent endpoint. Use fully qualified endpoint.
-                    options.EndpointUri = "http://localhost:5000/";
+                    options.EndpointUri = System.Environment.GetEnvironmentVariable("Agent_EndpointUri");
                     // The path to the genesis transaction file.
-                    options.GenesisFilename = Path.GetFullPath("genesis_txn");
+                    options.GenesisFilename = Path.GetFullPath(System.Environment.GetEnvironmentVariable("Agent_GenesisFilename"));
                     #endregion
 
                     #region Optional configuration parameters
                     // The identifier of the wallet
-                    options.WalletConfiguration.Id = "MyAgentWallet";
+                    options.WalletConfiguration.Id = System.Environment.GetEnvironmentVariable("Agent_WalletConfiguration_Id"); 
+                    options.WalletConfiguration.StorageType = "postgres_storage";
+                    options.WalletConfiguration.StorageConfiguration.Url = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Url");
+                    options.WalletConfiguration.StorageConfiguration.WalletScheme = "MultiWalletSingleTable";
+
+                    options.WalletConfiguration.StorageCredential.Account = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Account");
+                    options.WalletConfiguration.StorageCredential.Password = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Password");
+                    options.WalletConfiguration.StorageCredential.AdminAccount = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminAccount");
+                    options.WalletConfiguration.StorageCredential.AdminPassword = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminPassword");
+
                     // Secret key used to open the wallet.
-                    options.WalletCredentials.Key = "MySecretKey";
+                    options.WalletCredentials.Key = System.Environment.GetEnvironmentVariable("Agent_WalletCredentials_Key");
+                    options.WalletCredentials.StorageCredentials = options.WalletConfiguration.StorageCredential;
+
+
+
+                    PostgresPluginLoader.LoadPostGressPlugin(options.WalletConfiguration);
+
                     #endregion
                 });
                 builder.Services.AddSingleton<IAgentMiddleware, SimpleACAForwardMiddleware>();
