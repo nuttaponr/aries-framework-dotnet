@@ -20,6 +20,7 @@ namespace MediatorAgentService
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseUrls(System.Environment.GetEnvironmentVariable("applicationUrl"));
                     webBuilder.UseStartup<Startup>();
                 });
     }
