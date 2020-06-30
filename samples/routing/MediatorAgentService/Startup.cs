@@ -34,15 +34,19 @@ namespace MediatorAgentService
 
                     #region Optional configuration parameters
                     // The identifier of the wallet
-                    options.WalletConfiguration.Id = System.Environment.GetEnvironmentVariable("Agent_WalletConfiguration_Id"); 
-                    options.WalletConfiguration.StorageType = "postgres_storage";
-                    options.WalletConfiguration.StorageConfiguration.Url = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Url");
-                    options.WalletConfiguration.StorageConfiguration.WalletScheme = "MultiWalletSingleTable";
+                    options.WalletConfiguration.Id = System.Environment.GetEnvironmentVariable("Agent_WalletConfiguration_Id");
 
-                    options.WalletConfiguration.StorageCredential.Account = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Account");
-                    options.WalletConfiguration.StorageCredential.Password = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Password");
-                    options.WalletConfiguration.StorageCredential.AdminAccount = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminAccount");
-                    options.WalletConfiguration.StorageCredential.AdminPassword = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminPassword");
+                    if  (System.Environment.GetEnvironmentVariable("StorageType") == "postgres" )
+                    {
+                        options.WalletConfiguration.StorageType = "postgres_storage";
+                        options.WalletConfiguration.StorageConfiguration.Url = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Url");
+                        options.WalletConfiguration.StorageConfiguration.WalletScheme = "MultiWalletSingleTable";
+
+                        options.WalletConfiguration.StorageCredential.Account = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Account");
+                        options.WalletConfiguration.StorageCredential.Password = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Password");
+                        options.WalletConfiguration.StorageCredential.AdminAccount = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminAccount");
+                        options.WalletConfiguration.StorageCredential.AdminPassword = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminPassword");
+                    }
 
                     // Secret key used to open the wallet.
                     options.WalletCredentials.Key = System.Environment.GetEnvironmentVariable("Agent_WalletCredentials_Key");
