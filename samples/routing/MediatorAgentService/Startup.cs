@@ -53,8 +53,9 @@ namespace MediatorAgentService
                     options.WalletCredentials.StorageCredentials = options.WalletConfiguration.StorageCredential;
 
 
-
-                    PostgresPluginLoader.LoadPostGressPlugin(options.WalletConfiguration);
+                    if  (System.Environment.GetEnvironmentVariable("StorageType") == "postgres" ) {
+                        PostgresPluginLoader.LoadPostGressPlugin(options.WalletConfiguration);
+                    }
 
                     #endregion
                 });
