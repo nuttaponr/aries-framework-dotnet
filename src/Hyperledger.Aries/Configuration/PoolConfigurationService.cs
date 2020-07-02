@@ -41,6 +41,7 @@ namespace Hyperledger.Aries.Configuration
         {
             try
             {
+                Console.WriteLine("Creating Pool with genesis file " + _agentOptions.GenesisFilename);
                 if (_agentOptions.GenesisFilename == null)
                 {
                     _logger.LogWarning("Pool configuration genesis file not supplied.");

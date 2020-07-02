@@ -46,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.Configure(options);
             builder.Services.AddHostedService<MediatorProvisioningService>();
             builder.Services.AddSingleton<MediatorDiscoveryMiddleware>();
+            builder.Services.AddHostedService<PoolConfigurationService>();
 
             return builder;
         }
