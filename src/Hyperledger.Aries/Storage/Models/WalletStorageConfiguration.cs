@@ -22,6 +22,9 @@ namespace Hyperledger.Aries.Storage
             [JsonProperty("wallet_scheme", NullValueHandling = NullValueHandling.Ignore)]
             public string WalletScheme { get; set; }
 
+            [JsonProperty("tls", NullValueHandling = NullValueHandling.Ignore)]
+            public string Tls { get; set; }
+
             /// <inheritdoc />
             public override string ToString() =>
                 $"{GetType().Name}: " +
