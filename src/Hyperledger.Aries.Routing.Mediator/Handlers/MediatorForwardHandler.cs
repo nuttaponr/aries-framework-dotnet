@@ -100,6 +100,7 @@ namespace Hyperledger.Aries.Routing
 
                 if (response.IsSuccessStatusCode)
                 {
+                    Console.WriteLine("Success to notify.");
                     string respContent = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"Return from notify {respContent}");
                     return true;
@@ -107,6 +108,8 @@ namespace Hyperledger.Aries.Routing
                 else
                 {
                     Console.WriteLine("Failed to notify.");
+                    string respContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Return from notify {respContent}");
                     return false;
                 }
             }
