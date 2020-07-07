@@ -46,7 +46,7 @@ namespace Hyperledger.Aries.Routing
             this.routingStore = routingStore;
             this.eventAggregator = eventAggregator;
             
-            if (inboxNotificationEndpoint != null && Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint").Length >0)
+            if (Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint") != null && Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint").Length >0)
             {
                 notifyEdgeClient = true;
                 inboxNotificationEndpoint = Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint");
