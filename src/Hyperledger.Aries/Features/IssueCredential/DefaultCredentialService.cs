@@ -22,6 +22,8 @@ using Hyperledger.Aries.Configuration;
 using Hyperledger.Aries.Ledger;
 using Hyperledger.Aries.Payments;
 using Hyperledger.Aries.Storage;
+using Hyperledger.Indy;
+using Polly;
 
 namespace Hyperledger.Aries.Features.IssueCredential
 {
@@ -233,7 +235,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
         }
 
         /// <inheritdoc />
-        public async Task<string> ProcessOfferAsync(IAgentContext agentContext, CredentialOfferMessage credentialOffer,
+        public virtual async Task<string> ProcessOfferAsync(IAgentContext agentContext, CredentialOfferMessage credentialOffer,
             ConnectionRecord connection)
         {
             var offerAttachment = credentialOffer.Offers.FirstOrDefault(x => x.Id == "libindy-cred-offer-0")
@@ -244,10 +246,11 @@ namespace Hyperledger.Aries.Features.IssueCredential
             var definitionId = offer["cred_def_id"].ToObject<string>();
             var schemaId = offer["schema_id"].ToObject<string>();
 
+            var threadId = credentialOffer.GetThreadId() ?? Guid.NewGuid().ToString();
             // Write offer record to local wallet
             var credentialRecord = new CredentialRecord
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = threadId,
                 OfferJson = offerJson,
                 ConnectionId = connection?.Id,
                 CredentialDefinitionId = definitionId,
@@ -262,7 +265,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
                 State = CredentialState.Offered
             };
             credentialRecord.SetTag(TagConstants.Role, TagConstants.Holder);
-            credentialRecord.SetTag(TagConstants.LastThreadId, credentialOffer.GetThreadId());
+            credentialRecord.SetTag(TagConstants.LastThreadId, threadId);
 
             await RecordService.AddAsync(agentContext.Wallet, credentialRecord);
 
@@ -270,7 +273,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
             {
                 RecordId = credentialRecord.Id,
                 MessageType = credentialOffer.Type,
-                ThreadId = credentialOffer.GetThreadId()
+                ThreadId = threadId
             });
 
             return credentialRecord.Id;
@@ -280,27 +283,36 @@ namespace Hyperledger.Aries.Features.IssueCredential
         public async Task<CredentialRecord> CreateCredentialAsync(IAgentContext agentContext,
             CredentialOfferMessage message)
         {
-            var service = message.GetDecorator<ServiceDecorator>(DecoratorNames.ServiceDecorator);
-            var credentialRecordId = await ProcessOfferAsync(agentContext, message, null);
-
-            var (request, record) = await CreateRequestAsync(agentContext, credentialRecordId);
-            var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
-
+            var credentialRecordId = "";
             try
             {
-                var credentialIssueMessage = await MessageService.SendReceiveAsync<CredentialIssueMessage>(
-                    wallet: agentContext.Wallet,
-                    message: request,
-                    recipientKey: service.RecipientKeys.First(),
-                    endpointUri: service.ServiceEndpoint,
-                    routingKeys: service.RoutingKeys.ToArray(),
-                    senderKey: provisioning.IssuerVerkey);
-                var recordId = await ProcessCredentialAsync(agentContext, credentialIssueMessage, null);
-                return await RecordService.GetAsync<CredentialRecord>(agentContext.Wallet, recordId);
+                var service = message.GetDecorator<ServiceDecorator>(DecoratorNames.ServiceDecorator);
+
+                credentialRecordId = await ProcessOfferAsync(agentContext, message, null);
+
+                var (request, record) = await CreateRequestAsync(agentContext, credentialRecordId);
+                var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
+
+                try
+                {
+                    var credentialIssueMessage = await MessageService.SendReceiveAsync<CredentialIssueMessage>(
+                        wallet: agentContext.Wallet,
+                        message: request,
+                        recipientKey: service.RecipientKeys.First(),
+                        endpointUri: service.ServiceEndpoint,
+                        routingKeys: service.RoutingKeys.ToArray(),
+                        senderKey: provisioning.IssuerVerkey);
+                    var recordId = await ProcessCredentialAsync(agentContext, credentialIssueMessage, null);
+                    return await RecordService.GetAsync<CredentialRecord>(agentContext.Wallet, recordId);
+                }
+                catch (AriesFrameworkException ex) when (ex.ErrorCode == ErrorCode.A2AMessageTransmissionError)
+                {
+                    throw new AriesFrameworkException(ex.ErrorCode, ex.Message, record, null);
+                }
             }
-            catch (AriesFrameworkException ex) when (ex.ErrorCode == ErrorCode.A2AMessageTransmissionError)
+            catch (IndyException e) when (e.SdkErrorCode == 309)
             {
-                throw new AriesFrameworkException(ex.ErrorCode, ex.Message, record, null);
+                throw new AriesFrameworkException(ErrorCode.LedgerItemNotFound, e.Message, credentialRecordId);
             }
         }
 
@@ -366,7 +378,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
         }
 
         /// <inheritdoc />
-        public async Task<string> ProcessCredentialAsync(IAgentContext agentContext, CredentialIssueMessage credential,
+        public virtual async Task<string> ProcessCredentialAsync(IAgentContext agentContext, CredentialIssueMessage credential,
             ConnectionRecord connection)
         {
             var credentialAttachment = credential.Credentials.FirstOrDefault(x => x.Id == "libindy-cred-0")
@@ -377,7 +389,10 @@ namespace Hyperledger.Aries.Features.IssueCredential
             var definitionId = credentialJobj["cred_def_id"].ToObject<string>();
             var revRegId = credentialJobj["rev_reg_id"]?.ToObject<string>();
 
-            var credentialRecord = await this.GetByThreadIdAsync(agentContext, credential.GetThreadId());
+            var credentialRecord = await Policy.Handle<AriesFrameworkException>()
+                .RetryAsync(3, async (ex, retry) => { await Task.Delay((int)Math.Pow(retry, 2) * 100); })
+                .ExecuteAsync(() => this.GetByThreadIdAsync(agentContext, credential.GetThreadId()));
+
             if (credentialRecord.State != CredentialState.Requested)
                 throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Credential state was invalid. Expected '{CredentialState.Requested}', found '{credentialRecord.State}'");
@@ -446,7 +461,7 @@ namespace Hyperledger.Aries.Features.IssueCredential
             // Write offer record to local wallet
             var credentialRecord = new CredentialRecord
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = threadId,
                 CredentialDefinitionId = config.CredentialDefinitionId,
                 OfferJson = offerJson,
                 ConnectionId = connectionId,
@@ -522,13 +537,17 @@ namespace Hyperledger.Aries.Features.IssueCredential
         }
 
         /// <inheritdoc />
-        public async Task<string> ProcessCredentialRequestAsync(IAgentContext agentContext, CredentialRequestMessage
+        public virtual async Task<string> ProcessCredentialRequestAsync(IAgentContext agentContext, CredentialRequestMessage
             credentialRequest, ConnectionRecord connection)
         {
             Logger.LogInformation(LoggingEvents.StoreCredentialRequest, "Type {0},", credentialRequest.Type);
 
             // TODO Handle case when no thread is included
-            var credential = await this.GetByThreadIdAsync(agentContext, credentialRequest.GetThreadId());
+            //var credential = await this.GetByThreadIdAsync(agentContext, credentialRequest.GetThreadId());
+
+            var credential = await Policy.Handle<AriesFrameworkException>()
+                .RetryAsync(3, async (ex, retry) => { await Task.Delay((int)Math.Pow(retry, 2) * 100); })
+                .ExecuteAsync(() => this.GetByThreadIdAsync(agentContext, credentialRequest.GetThreadId()));
 
             var credentialAttachment = credentialRequest.Requests.FirstOrDefault(x => x.Id == "libindy-cred-request-0")
                                        ?? throw new ArgumentException("Credential request attachment not found.");

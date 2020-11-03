@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Hyperledger.Aries.Storage
 {
@@ -25,6 +26,7 @@ namespace Hyperledger.Aries.Storage
         /// </summary>
         /// <value>The type of the storage.</value>
         [JsonProperty("storage_type")]
+        [JsonPropertyName("storage_type")]
         public string StorageType { get; set; } = "default";
 
         /// <summary>
@@ -32,6 +34,7 @@ namespace Hyperledger.Aries.Storage
         /// </summary>
         /// <value>The storage configuration.</value>
         [JsonProperty("storage_config", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyName("storage_config")]
         public WalletStorageConfiguration StorageConfiguration { get; set; }
 
 

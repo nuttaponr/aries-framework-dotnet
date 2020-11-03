@@ -13,6 +13,8 @@ namespace Hyperledger.Aries.Routing
         protected override void ConfigureHandlers()
         {
             AddConnectionHandler();
+            AddDiscoveryHandler();
+            AddTrustPingHandler();
             AddHandler<MediatorForwardHandler>();
             AddHandler<DefaultStoreBackupHandler>();
             AddHandler<RetrieveBackupHandler>();
