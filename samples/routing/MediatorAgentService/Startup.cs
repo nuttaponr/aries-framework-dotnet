@@ -40,7 +40,7 @@ namespace MediatorAgentService
                     {
                         options.WalletConfiguration.StorageType = "postgres_storage";
                         options.WalletConfiguration.StorageConfiguration.Url = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Url");
-                        options.WalletConfiguration.StorageConfiguration.WalletScheme = "MultiWalletSingleTable";
+                        options.WalletConfiguration.StorageConfiguration.WalletScheme = System.Environment.GetEnvironmentVariable("WalletScheme"); // "MultiWalletSingleTable", "MultiWalletMultiTable"
                         options.WalletConfiguration.StorageConfiguration.Tls = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Tls");
 
                         options.WalletConfiguration.StorageCredential.Account = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Account");
