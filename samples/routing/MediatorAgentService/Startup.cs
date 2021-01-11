@@ -42,6 +42,7 @@ namespace MediatorAgentService
                         options.WalletConfiguration.StorageConfiguration.Url = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Url");
                         options.WalletConfiguration.StorageConfiguration.WalletScheme = System.Environment.GetEnvironmentVariable("WalletScheme"); // "MultiWalletSingleTable", "MultiWalletMultiTable"
                         options.WalletConfiguration.StorageConfiguration.Tls = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Tls");
+                        options.WalletConfiguration.StorageConfiguration.MaxConnections = Int32.Parse(System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_MaxConnections"));
 
                         options.WalletConfiguration.StorageCredential.Account = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Account");
                         options.WalletConfiguration.StorageCredential.Password = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_Password");

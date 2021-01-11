@@ -19,6 +19,9 @@ namespace Hyperledger.Aries.Storage
             [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
             public string Url { get; set; }
 
+            [JsonProperty("max_connections", NullValueHandling = NullValueHandling.Ignore)]
+            public int MaxConnections { get; set; }
+
             [JsonProperty("wallet_scheme", NullValueHandling = NullValueHandling.Ignore)]
             public string WalletScheme { get; set; }
 
