@@ -49,11 +49,14 @@ namespace MediatorAgentService
                         options.WalletConfiguration.StorageCredential.AdminAccount = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminAccount");
                         options.WalletConfiguration.StorageCredential.AdminPassword = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_AdminPassword");
                     }
+                    else if (System.Environment.GetEnvironmentVariable("StorageType") == "default")
+                    {
+                        options.WalletConfiguration.StorageConfiguration.Path = System.Environment.GetEnvironmentVariable("Agent_StorageConfiguration_DbFilePath");
+                    }
 
                     // Secret key used to open the wallet.
                     options.WalletCredentials.Key = System.Environment.GetEnvironmentVariable("Agent_WalletCredentials_Key");
                     options.WalletCredentials.StorageCredentials = options.WalletConfiguration.StorageCredential;
-
 
                     if  (System.Environment.GetEnvironmentVariable("StorageType") == "postgres" ) {
                         PostgresPluginLoader.LoadPostGressPlugin(options.WalletConfiguration);
