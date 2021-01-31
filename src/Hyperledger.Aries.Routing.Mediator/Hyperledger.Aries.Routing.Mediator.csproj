@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Hyperledger.Aries.Routing\Hyperledger.Aries.Routing.csproj" />
     <ProjectReference Include="..\Hyperledger.Aries\Hyperledger.Aries.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Hyperledger.Aries" Version="1.5.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
 </Project>
