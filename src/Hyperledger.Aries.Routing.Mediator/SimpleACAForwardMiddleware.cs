@@ -59,7 +59,7 @@ namespace Hyperledger.Aries.Routing.Mediator
                 ForwardMessage forwardMessage = messageContext.GetMessage<ForwardMessage>();
 
                 //if (forwardMessage.To == Environment.GetEnvironmentVariable("ACA_ROUTE"))
-                if (forwardMessage.To == this.acaList.First(kvp => kvp.Key == forwardMessage.To).Key)
+                if (forwardMessage.To == this.acaList.FirstOrDefault(kvp => kvp.Key == forwardMessage.To).Key)
                 {
                     //var uri = new Uri(Environment.GetEnvironmentVariable("ACA_ENDPOINT"));
                     var uri = new Uri(this.acaList.First(kvp => kvp.Key == forwardMessage.To).Value);
