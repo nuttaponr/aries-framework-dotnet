@@ -31,33 +31,42 @@ namespace Hyperledger.Aries.AspNetCore
         /// <returns></returns>
         public async Task Invoke(HttpContext httpContext, IAgentProvider agentProvider)
         {
-            if (!HttpMethods.IsPost(httpContext.Request.Method)
-                || !(httpContext.Request.ContentType?.Equals(DefaultMessageService.AgentWireMessageMimeType) ?? false))
+            try
             {
-                await _next(httpContext);
-                return;
+                if (!HttpMethods.IsPost(httpContext.Request.Method)
+                    || !(httpContext.Request.ContentType?.Equals(DefaultMessageService.AgentWireMessageMimeType) ??
+                         false))
+                {
+                    await _next(httpContext);
+                    return;
+                }
+
+                if (httpContext.Request.ContentLength == null) throw new Exception("Empty content length");
+
+                using var stream = new StreamReader(httpContext.Request.Body);
+                var body = await stream.ReadToEndAsync();
+
+                var agent = await agentProvider.GetAgentAsync();
+
+                var response = await agent.ProcessAsync(
+                    context: await agentProvider.GetContextAsync(), //TODO assumes all received messages are packed 
+                    messageContext: new PackedMessageContext(body.GetUTF8Bytes()));
+
+                httpContext.Response.StatusCode = 200;
+
+                if (response != null)
+                {
+                    httpContext.Response.ContentType = DefaultMessageService.AgentWireMessageMimeType;
+                    await httpContext.Response.WriteAsync(response.Payload.GetUTF8String());
+                }
+                else
+                    await httpContext.Response.WriteAsync(string.Empty);
             }
-
-            if (httpContext.Request.ContentLength == null) throw new Exception("Empty content length");
-
-            using var stream = new StreamReader(httpContext.Request.Body);
-            var body = await stream.ReadToEndAsync();
-
-            var agent = await agentProvider.GetAgentAsync();
-
-            var response = await agent.ProcessAsync(
-                context: await agentProvider.GetContextAsync(), //TODO assumes all received messages are packed 
-                messageContext: new PackedMessageContext(body.GetUTF8Bytes()));
-
-            httpContext.Response.StatusCode = 200;
-
-            if (response != null)
+            catch (Exception e)
             {
-                httpContext.Response.ContentType = DefaultMessageService.AgentWireMessageMimeType;
-                await httpContext.Response.WriteAsync(response.Payload.GetUTF8String());
+                Console.WriteLine(e);
+                throw e;
             }
-            else
-                await httpContext.Response.WriteAsync(string.Empty);
         }
     }
 }

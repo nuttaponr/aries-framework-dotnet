@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 
 namespace Hyperledger.Aries.Routing
 {
-    
     /// <summary>
     /// Mediator Forward Handler
     /// </summary>
@@ -45,44 +44,59 @@ namespace Hyperledger.Aries.Routing
             this.walletService = walletService;
             this.routingStore = routingStore;
             this.eventAggregator = eventAggregator;
-            
-            if (Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint") != null && Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint").Length >0)
+
+            if (Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint") != null &&
+                Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint").Length > 0)
             {
                 notifyEdgeClient = true;
                 inboxNotificationEndpoint = Environment.GetEnvironmentVariable("Inbox_Notification_Endpoint");
                 apiKey = Environment.GetEnvironmentVariable("Inbox_Notification_ApiKey");
+                Console.WriteLine(inboxNotificationEndpoint);
+                Console.WriteLine(apiKey);
             }
         }
 
         /// <inheritdoc />
-        protected override async Task<AgentMessage> ProcessAsync(ForwardMessage message, IAgentContext agentContext, UnpackedMessageContext messageContext)
+        protected override async Task<AgentMessage> ProcessAsync(ForwardMessage message, IAgentContext agentContext,
+            UnpackedMessageContext messageContext)
         {
-            var inboxId = await routingStore.FindRouteAsync(message.To);
-            var inboxRecord = await recordService.GetAsync<InboxRecord>(agentContext.Wallet, inboxId);
-
-            var edgeWallet = await walletService.GetWalletAsync(inboxRecord.WalletConfiguration, inboxRecord.WalletCredentials);
-
-            var inboxItemRecord = new InboxItemRecord { ItemData = message.Message.ToJson(), Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds() };
-            await recordService.AddAsync(edgeWallet, inboxItemRecord);
-
-            await NotifyEdge(inboxId);
-
-            eventAggregator.Publish(new InboxItemEvent
+            try
             {
-                InboxId = inboxId,
-                ItemId = inboxItemRecord.Id
-            });
+                var inboxId = await routingStore.FindRouteAsync(message.To);
+                var inboxRecord = await recordService.GetAsync<InboxRecord>(agentContext.Wallet, inboxId);
 
-            return null;
+                var edgeWallet =
+                    await walletService.GetWalletAsync(inboxRecord.WalletConfiguration, inboxRecord.WalletCredentials);
+
+                var inboxItemRecord = new InboxItemRecord
+                    {ItemData = message.Message.ToJson(), Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds()};
+                await recordService.AddAsync(edgeWallet, inboxItemRecord);
+
+                await NotifyEdge(inboxId);
+
+                eventAggregator.Publish(new InboxItemEvent
+                {
+                    InboxId = inboxId,
+                    ItemId = inboxItemRecord.Id
+                });
+                return null;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw e;
+            }
         }
 
         private async Task<Boolean> NotifyEdge(string inboxId)
         {
             if (notifyEdgeClient)
             {
-
                 var httpClientHandler = new HttpClientHandler();
-                httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => { return true; };
+                httpClientHandler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) =>
+                {
+                    return true;
+                };
                 var client = new System.Net.Http.HttpClient(httpClientHandler);
 
                 HttpContent content = new FormUrlEncodedContent(new[]
@@ -96,7 +110,7 @@ namespace Hyperledger.Aries.Routing
                 content.Headers.Add("x-api-key", apiKey);
 
                 var response = await client.PostAsync(inboxNotificationEndpoint, content);
-              
+
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -113,6 +127,7 @@ namespace Hyperledger.Aries.Routing
                     return false;
                 }
             }
+
             return true;
         }
     }

@@ -66,7 +66,8 @@ namespace Hyperledger.Aries.Agents
         protected void AddCredentialHandler() => Handlers.Add(Provider.GetRequiredService<DefaultCredentialHandler>());
 
         /// <summary>Adds the handler for supporting default proof flow.</summary>
-        protected void AddTrustPingHandler() => Handlers.Add(Provider.GetRequiredService<DefaultTrustPingMessageHandler>());
+        protected void AddTrustPingHandler() =>
+            Handlers.Add(Provider.GetRequiredService<DefaultTrustPingMessageHandler>());
 
         /// <summary>Adds the handler for supporting default proof flow.</summary>
         protected void AddProofHandler() => Handlers.Add(Provider.GetRequiredService<DefaultProofHandler>());
@@ -75,7 +76,8 @@ namespace Hyperledger.Aries.Agents
         protected void AddForwardHandler() => Handlers.Add(Provider.GetRequiredService<DefaultForwardHandler>());
 
         /// <summary>Adds a default basic message handler.</summary>
-        protected void AddBasicMessageHandler() => Handlers.Add(Provider.GetRequiredService<DefaultBasicMessageHandler>());
+        protected void AddBasicMessageHandler() =>
+            Handlers.Add(Provider.GetRequiredService<DefaultBasicMessageHandler>());
 
         /// <summary>Adds a default discovery handler.</summary>
         protected void AddDiscoveryHandler() => Handlers.Add(Provider.GetRequiredService<DefaultDiscoveryHandler>());
@@ -100,21 +102,32 @@ namespace Hyperledger.Aries.Agents
         /// TODO should recieve a message context and return a message context.
         public async Task<MessageContext> ProcessAsync(IAgentContext context, MessageContext messageContext)
         {
-            EnsureConfigured();
-
-            if (context is DefaultAgentContext agentContext)
+            try
             {
-                agentContext.AddNext(messageContext);
-                agentContext.Agent = this;
+                EnsureConfigured();
 
-                MessageContext outgoingMessageContext = null;
-                while (agentContext.TryGetNext(out var message) && outgoingMessageContext == null)
+                if (context is DefaultAgentContext agentContext)
                 {
-                    outgoingMessageContext = await ProcessMessage(agentContext, message);
+                    agentContext.AddNext(messageContext);
+                    agentContext.Agent = this;
+
+                    MessageContext outgoingMessageContext = null;
+                    while (agentContext.TryGetNext(out var message) && outgoingMessageContext == null)
+                    {
+                        outgoingMessageContext = await ProcessMessage(agentContext, message);
+                    }
+
+                    return outgoingMessageContext;
                 }
-                return outgoingMessageContext;
+
+                throw new Exception(
+                    "Unsupported agent context. When using custom context, please inherit from 'DefaultAgentContext'");
             }
-            throw new Exception("Unsupported agent context. When using custom context, please inherit from 'DefaultAgentContext'");
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw e;
+            }
         }
 
         private async Task<MessageContext> ProcessMessage(IAgentContext agentContext, MessageContext messageContext)
@@ -144,7 +157,9 @@ namespace Hyperledger.Aries.Agents
                 }
                 catch (AriesFrameworkException e)
                 {
-                    throw new AriesFrameworkException(e.ErrorCode,e.Message,inboundMessageContext.ContextRecord,inboundMessageContext.Connection);
+                    Console.WriteLine(e);
+                    throw new AriesFrameworkException(e.ErrorCode, e.Message, inboundMessageContext.ContextRecord,
+                        inboundMessageContext.Connection);
                 }
 
                 // Process message with any registered middlewares
@@ -158,19 +173,24 @@ namespace Hyperledger.Aries.Agents
                     if (inboundMessageContext.ReturnRoutingRequested())
                     {
                         var result = inboundMessageContext.Connection != null
-                            ? await CryptoUtils.PackAsync(agentContext.Wallet, inboundMessageContext.Connection.TheirVk, response.ToByteArray())
-                            : await CryptoUtils.PackAsync(agentContext.Wallet, unpacked.SenderVerkey, response.ToByteArray());
+                            ? await CryptoUtils.PackAsync(agentContext.Wallet, inboundMessageContext.Connection.TheirVk,
+                                response.ToByteArray())
+                            : await CryptoUtils.PackAsync(agentContext.Wallet, unpacked.SenderVerkey,
+                                response.ToByteArray());
                         return new PackedMessageContext(result);
                     }
+
                     if (inboundMessageContext.Connection != null)
                     {
                         await MessageService.SendAsync(agentContext.Wallet, response, inboundMessageContext.Connection);
                     }
                     else
                     {
-                        Logger.LogWarning("Return response available, but connection was not found or was in invalid state");
+                        Logger.LogWarning(
+                            "Return response available, but connection was not found or was in invalid state");
                     }
                 }
+
                 return null;
             }
 
@@ -178,7 +198,8 @@ namespace Hyperledger.Aries.Agents
                 $"Couldn't locate a message handler for type {inboundMessageContext.GetMessageType()}");
         }
 
-        private async Task<(UnpackedMessageContext, UnpackResult)> UnpackAsync(IAgentContext agentContext, PackedMessageContext message)
+        private async Task<(UnpackedMessageContext, UnpackResult)> UnpackAsync(IAgentContext agentContext,
+            PackedMessageContext message)
         {
             UnpackResult unpacked;
 
@@ -197,7 +218,8 @@ namespace Hyperledger.Aries.Agents
             {
                 try
                 {
-                    if (await ConnectionService.ResolveByMyKeyAsync(agentContext, unpacked.RecipientVerkey) is ConnectionRecord connection)
+                    if (await ConnectionService.ResolveByMyKeyAsync(agentContext, unpacked.RecipientVerkey) is
+                        ConnectionRecord connection)
                     {
                         result = new UnpackedMessageContext(unpacked.Message, connection);
                     }
@@ -222,7 +244,6 @@ namespace Hyperledger.Aries.Agents
                 {
                     result = new UnpackedMessageContext(unpacked.Message, unpacked.SenderVerkey);
                 }
-
             }
 
             return (result, unpacked);
